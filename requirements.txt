@@ -1,8 +1,9 @@
 flask
 numpy
 opencv-python
-tensorflow-cpu==2.10.0
+h5py
 keras
 scikit-learn
 matplotlib
 gunicorn
+gdown
