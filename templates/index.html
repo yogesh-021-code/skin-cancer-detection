@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Skin Cancer Detection</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: white;
+}
+
+/* HEADER */
+header {
+    text-align: center;
+    padding: 20px;
+    font-size: 26px;
+    font-weight: bold;
+}
+
+/* NAVBAR */
+.navbar {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    margin-bottom: 20px;
+}
+
+.navbar span {
+    cursor: pointer;
+    color: #cbd5e1;
+    transition: 0.3s;
+}
+
+.navbar span:hover {
+    color: white;
+    border-bottom: 2px solid #00BFFF;
+}
+
+/* SECTIONS */
+.section {
+    display: none;
+    padding: 20px;
+}
+
+.active {
+    display: block;
+}
+
+/* CONTAINER */
+.container {
+    display: flex;
+    gap: 20px;
+    max-width: 1100px;
+    margin: auto;
+}
+
+/* CARD */
+.card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(15px);
+    padding: 20px;
+    border-radius: 15px;
+    flex: 1;
+    transition: 0.3s;
+}
+
+/* 🔥 CARD HOVER */
+.card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+
+/* IMAGE */
+img {
+    width: 100%;
+    border-radius: 10px;
+    margin-top: 10px;
+    transition: 0.3s;
+}
+
+/* 🔥 IMAGE HOVER */
+img:hover {
+    transform: scale(1.05);
+}
+
+/* BUTTONS */
+button {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.analyze { background: #22c55e; color: white; }
+.clear { background: #ef4444; color: white; }
+
+/* PROGRESS */
+.progress-bar {
+    background: #222;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.progress {
+    height: 10px;
+    width: 0%;
+    background: linear-gradient(90deg, #22c55e, #00BFFF);
+}
+
+/* BOX */
+.box {
+    background: rgba(255,255,255,0.08);
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 10px;
+    font-size: 13px;
+}
+
+/* RESPONSIVE */
+@media(max-width: 900px){
+    .container { flex-direction: column; }
+}
+</style>
+</head>
+
+<body>
+
+<header>🧠 AI Skin Cancer Detection</header>
+
+<!-- NAV -->
+<div class="navbar">
+    <span onclick="showSection('home')">Home</span>
+    <span onclick="showSection('dataset')">Datasets</span>
+    <span onclick="showSection('model')">Model</span>
+    <span onclick="showSection('disclaimer')">Disclaimer</span>
+</div>
+
+<!-- ================= HOME ================= -->
+<div id="home" class="section active">
+<div class="container">
+
+<div class="card">
+    <h3>📤 Upload</h3>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="image" required><br><br>
+        <button class="analyze">Analyze</button>
+        <button type="button" class="clear" onclick="clearPage()">Clear</button>
+    </form>
+
+    {% if original_image %}
+    <img src="{{ original_image }}">
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>📊 PCA Features</h3>
+    <div class="box">
+        Symmetry: 0.93 <br>
+        Border: High <br>
+        Color: Medium <br>
+        Texture: 0.85
+    </div>
+</div>
+
+<div class="card">
+    <h3>📈 Result</h3>
+
+    {% if result %}
+        {% if result == "❌ This is not a skin image" %}
+            <h2 style="color:red;">{{ result }}</h2>
+        {% else %}
+            <h2>{{ result }}</h2>
+            <p>{{ confidence|round(2) }}%</p>
+
+            <div class="progress-bar">
+                <div class="progress" id="progressBar"></div>
+            </div>
+
+            <img src="{{ pca_image }}">
+
+            <div class="box">
+                {% if result == "Malignant" %}
+                ⚠️ High risk
+                {% else %}
+                ✔️ Low risk
+                {% endif %}
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+</div>
+</div>
+
+<!-- ================= DATASET ================= -->
+<div id="dataset" class="section">
+<div class="container">
+<div class="card">
+<h3>📁 Dataset Info</h3>
+<p>
+We use ISIC skin lesion dataset for training.  
+Includes thousands of labeled images for benign and malignant cases.
+</p>
+</div>
+</div>
+</div>
+
+<!-- ================= MODEL ================= -->
+<div id="model" class="section">
+<div class="container">
+<div class="card">
+<h3>🧠 Model Architecture</h3>
+<p>
+CNN model with Conv2D, MaxPooling, Dense layers.  
+Uses PCA for feature reduction and improves accuracy.
+</p>
+</div>
+</div>
+</div>
+
+<!-- ================= DISCLAIMER ================= -->
+<div id="disclaimer" class="section">
+<div class="container">
+<div class="card">
+<h3>⚠️ Disclaimer</h3>
+<p>
+This system is for educational purposes only.  
+It is NOT a medical device.  
+Always consult a doctor.
+</p>
+</div>
+</div>
+</div>
+
+<!-- JS -->
+<script>
+function showSection(id){
+    document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function clearPage(){
+    window.location.href = "/";
+}
+</script>
+
+{% if confidence %}
+<script>
+document.getElementById("progressBar").style.width = "{{ confidence|int }}%";
+</script>
+{% endif %}
+
+</body>
+</html>
