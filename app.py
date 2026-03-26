@@ -2,7 +2,8 @@ from flask import Flask, render_template, request
 import os
 import cv2
 import numpy as np
-from tensorflow.keras.models import load_model
+##from tensorflow.keras.models import load_model
+from keras.models import load_model
 from sklearn.decomposition import PCA
 import uuid
 import os
