@@ -1,7 +1,7 @@
 flask
 numpy
 opencv-python
-h5py
+tensorflow==2.13.0
 keras
 scikit-learn
 matplotlib
