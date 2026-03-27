@@ -1,10 +1,9 @@
 flask
-numpy==1.23.5
-opencv-python
-opencv-python-headless
-tensorflow-cpu==2.10.0
-keras==2.10.0
+numpy
+pandas
 scikit-learn
-matplotlib
+tensorflow==2.10.0
+keras==2.10.0
+opencv-python-headless
 gunicorn
 gdown
