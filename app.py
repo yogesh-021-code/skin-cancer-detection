@@ -57,9 +57,8 @@ def is_skin_image(image):
 
     return skin_ratio > 0.1
 
-
 # ==============================
-# HOME ROUTE (IMPORTANT)
+# HOME ROUTE
 # ==============================
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -69,16 +68,38 @@ def index():
     pca_image = None
 
     if request.method == 'POST':
-        file = request.files['image']
+        try:
+            # ✅ SAFE FILE HANDLING
+            file = request.files.get('image')
 
-        if file:
+            if file is None or file.filename == "":
+                return render_template(
+                    "index.html",
+                    result="❌ Please upload an image",
+                    confidence=0,
+                    original_image=None,
+                    pca_image=None
+                )
+
+            # Save file
             filename = str(uuid.uuid4()) + ".jpg"
             filepath = os.path.join(UPLOAD_FOLDER, filename)
             file.save(filepath)
 
+            # Read image
             img = cv2.imread(filepath)
 
-            # Check skin image
+            # ✅ CHECK IMAGE VALIDITY
+            if img is None:
+                return render_template(
+                    "index.html",
+                    result="❌ Invalid image file",
+                    confidence=0,
+                    original_image=None,
+                    pca_image=None
+                )
+
+            # ✅ SKIN CHECK
             if not is_skin_image(img):
                 return render_template(
                     "index.html",
@@ -93,7 +114,7 @@ def index():
             img_norm = img_resized / 255.0
             img_input = np.reshape(img_norm, (1, 128, 128, 3))
 
-            # Load model here (lazy)
+            # ✅ LOAD MODEL SAFELY
             model = get_model()
 
             # Prediction
@@ -117,6 +138,10 @@ def index():
             original_image = filepath
             pca_image = pca_filepath
 
+        except Exception as e:
+            # ✅ CATCH ALL ERRORS (NO MORE 500)
+            return f"Error occurred: {str(e)}"
+
     return render_template(
         "index.html",
         result=result,
@@ -125,9 +150,8 @@ def index():
         pca_image=pca_image
     )
 
-
 # ==============================
-# RUN APP (FOR LOCAL ONLY)
+# RUN APP (LOCAL)
 # ==============================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
