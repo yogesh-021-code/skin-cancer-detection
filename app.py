@@ -2,29 +2,46 @@ from flask import Flask, render_template, request
 import os
 import cv2
 import numpy as np
-##from tensorflow.keras.models import load_model
 from keras.models import load_model
 from sklearn.decomposition import PCA
 import uuid
-import os
 import gdown
 
+# ==============================
+# MODEL DOWNLOAD (SAFE)
+# ==============================
 MODEL_PATH = "skin_cancer_model.h5"
 
 if not os.path.exists(MODEL_PATH):
-    url = "https://drive.google.com/uc?id=1l9EnZCeGaq9yqM-MXXrEDLD6kTMN5rxS"
-    gdown.download(url, MODEL_PATH, quiet=False)
+    try:
+        url = "https://drive.google.com/uc?id=1l9EnZCeGaq9yqM-MXXrEDLD6kTMN5rxS"
+        gdown.download(url, MODEL_PATH, quiet=False)
+    except Exception as e:
+        print("Model download failed:", e)
 
+# ==============================
+# FLASK APP
+# ==============================
 app = Flask(__name__)
 
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Load trained model
-model = load_model("skin_cancer_model.h5")
+# ==============================
+# LOAD MODEL (LAZY LOAD)
+# ==============================
+model = None
 
+def get_model():
+    global model
+    if model is None:
+        print("Loading model...")
+        model = load_model(MODEL_PATH)
+    return model
 
-# 🔥 Skin Detection Function
+# ==============================
+# SKIN DETECTION FUNCTION
+# ==============================
 def is_skin_image(image):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
@@ -38,9 +55,12 @@ def is_skin_image(image):
 
     skin_ratio = skin_pixels / total_pixels
 
-    return skin_ratio > 0.1   # threshold
+    return skin_ratio > 0.1
 
 
+# ==============================
+# HOME ROUTE (IMPORTANT)
+# ==============================
 @app.route('/', methods=['GET', 'POST'])
 def index():
     result = None
@@ -56,10 +76,9 @@ def index():
             filepath = os.path.join(UPLOAD_FOLDER, filename)
             file.save(filepath)
 
-            # Read image
             img = cv2.imread(filepath)
 
-            # 🔥 CHECK IF SKIN IMAGE
+            # Check skin image
             if not is_skin_image(img):
                 return render_template(
                     "index.html",
@@ -69,18 +88,20 @@ def index():
                     pca_image=None
                 )
 
-            # 🔥 MODEL INPUT
+            # Prepare image
             img_resized = cv2.resize(img, (128, 128))
             img_norm = img_resized / 255.0
             img_input = np.reshape(img_norm, (1, 128, 128, 3))
 
+            # Load model here (lazy)
+            model = get_model()
+
             # Prediction
             prediction = model.predict(img_input)[0][0]
             confidence = float(prediction) * 100
-
             result = "Malignant" if prediction > 0.5 else "Benign"
 
-            # 🔥 PCA (for visualization)
+            # PCA visualization
             img_small = cv2.resize(img, (64, 64))
             img_flat = img_small.reshape(-1, 3)
 
@@ -104,8 +125,10 @@ def index():
         pca_image=pca_image
     )
 
-import os
 
+# ==============================
+# RUN APP (FOR LOCAL ONLY)
+# ==============================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
