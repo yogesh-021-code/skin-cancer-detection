@@ -104,7 +104,6 @@ def index():
         pca_image=pca_image
     )
 
-
 import os
 
 if __name__ == "__main__":
